@@ -1,0 +1,12 @@
+kokoro  # Official Kokoro TTS library
+misaki  # G2P library for Kokoro
+torch  # PyTorch for model inference
+soundfile  # Audio file handling
+huggingface-hub  # Model downloads
+gradio  # Web interface
+pydub  # For audio format conversion
+espeakng-loader  # For loading espeak-ng library
+phonemizer-fork  # For phoneme generation
+wheel  # For building packages
+setuptools  # For installing packages 
+PyPDF2  # For PDF file handling
