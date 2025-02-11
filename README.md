@@ -1,18 +1,20 @@
 # Kokoro TTS Local
 
-A local implementation of the Kokoro Text-to-Speech model, featuring dynamic module loading, automatic dependency management.
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![TTS](https://img.shields.io/badge/TTS-Text--to--Speech-orange.svg)](https://github.com/solveditnpc/kokoro-tts-local)
 
-## Features
+A powerful, offline Text-to-Speech (TTS) solution based on the Kokoro-82M model, featuring 44 high-quality voices across multiple languages and accents. This local implementation provides fast, reliable text-to-speech conversion with support for multiple output formats (WAV, MP3, AAC) and real-time generation progress display.
 
-- Local text-to-speech synthesis using the Kokoro-82M model
-- Multiple voice support with easy voice selection (44 voices available)
-- Automatic model and voice downloading from Hugging Face
-- Phoneme output support and visualization
-- Interactive CLI interface
-- Voice listing functionality
-- Cross-platform support (Windows, Linux, macOS)
-- Real-time generation progress display
-- Multiple output formats (WAV, MP3, AAC)
+## 🌟 Key Features
+
+- 🎙️ 44 high-quality voices across American English, British English, and other languages
+- 💻 Completely offline operation - no internet needed after initial setup
+- 📚 Support for PDF and TXT file input
+- 🎵 Multiple output formats (WAV, MP3, AAC)
+- ⚡ Real-time generation with progress display
+- 🎛️ Adjustable speech speed (0.5x to 2.0x)
+- 📊 Automatic text chunking for optimal processing
+- 🎯 Easy-to-use interactive CLI interface
 
 ## Installing Prerequisites
 
