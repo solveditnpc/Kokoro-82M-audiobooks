@@ -166,6 +166,27 @@ def get_speed() -> float:
         except ValueError:
             print("Please enter a valid number.")
 
+def get_audio_format() -> Tuple[str, str]:
+    """Get desired audio format from user."""
+    print("\nAvailable audio formats:")
+    formats = {
+        "1": ("wav", "WAV - Highest quality, larger file size"),
+        "2": ("mp3", "MP3 - Good quality, smaller file size"),
+        "3": ("aac", "AAC - Good quality, smallest file size")
+    }
+    
+    for key, (fmt, desc) in formats.items():
+        print(f"{key}. {fmt.upper()} - {desc}")
+    
+    while True:
+        choice = input("\nSelect audio format (1-3, default: wav): ").strip()
+        if not choice:
+            return "wav", ".wav"
+        if choice in formats:
+            fmt = formats[choice][0]
+            return fmt, f".{fmt}"
+        print("Invalid choice. Please try again.")
+
 def split_text_into_chunks(text: str) -> List[str]:
     """
     Split text into natural chunks based on punctuation and length.
@@ -223,9 +244,12 @@ def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> No
     # Split text into natural chunks
     chunks = split_text_into_chunks(full_text)
     
+    # Get desired audio format
+    format, extension = get_audio_format()
+    
     # Create a timestamp for unique filename
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_path = Path(f"outputs/output_{timestamp}.wav")
+    output_path = Path(f"outputs/output_{timestamp}{extension}")
     
     for idx, chunk in enumerate(chunks, 1):
         print(f"\nProcessing chunk {idx}/{len(chunks)}: '{chunk}'")
@@ -233,41 +257,54 @@ def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> No
         chunk_audio = []
         generator = model(chunk, voice=f"voices/{voice}.pt", speed=speed)
         
-        with tqdm(desc=f"Generating speech for chunk {idx}") as pbar:
+        with tqdm(desc="Generating") as pbar:
             for gs, ps, audio in generator:
                 if audio is not None:
                     if isinstance(audio, np.ndarray):
                         audio = torch.from_numpy(audio).float()
                     chunk_audio.append(audio)
-                    print(f"\nGenerated segment: {gs}")
-                    print(f"Phonemes: {ps}")
                     pbar.update(1)
         
         if chunk_audio:
             # Combine audio for this chunk
             chunk_combined = torch.cat(chunk_audio, dim=0)
+            all_audio_segments.append(chunk_combined.numpy())
             
-            # Add appropriate pause based on punctuation
-            last_char = chunk.strip()[-1] if chunk.strip() else ''
-            if last_char in '.!?':
-                pause_length = int(SAMPLE_RATE * 0.20)  # Longer pause for sentence endings
-            elif last_char in ',;:':
-                pause_length = int(SAMPLE_RATE * 0.15)  # Medium pause for clause breaks
-            else:
-                pause_length = int(SAMPLE_RATE * 0.07)  # Short pause for natural breathing
-            
-            pause = torch.zeros(pause_length)
-            all_audio_segments.extend([chunk_combined, pause])
-        else:
-            print(f"Error: Failed to generate audio for chunk {idx}")
+            # Add silence between chunks
+            silence = np.zeros(int(SAMPLE_RATE * 0.5))  # 0.5s silence
+            all_audio_segments.append(silence)
     
     if all_audio_segments:
-        # Combine all segments into one audio file
-        final_audio = torch.cat(all_audio_segments, dim=0)
-        sf.write(output_path, final_audio.numpy(), SAMPLE_RATE)
-        print(f"\nAll audio combined and saved to {output_path.absolute()}")
+        # Combine all audio segments
+        audio_array = np.concatenate(all_audio_segments)
+        
+        # Normalize audio
+        audio_array = audio_array / np.max(np.abs(audio_array))
+        
+        # Save the audio file in the desired format
+        if format == "wav":
+            sf.write(output_path, audio_array, SAMPLE_RATE)
+        else:
+            # Save as WAV first
+            temp_wav = output_path.with_suffix('.wav')
+            sf.write(temp_wav, audio_array, SAMPLE_RATE)
+            
+            # Convert to desired format using FFmpeg
+            try:
+                if format == "mp3":
+                    os.system(f'ffmpeg -i "{temp_wav}" -codec:a libmp3lame -qscale:a 2 "{output_path}"')
+                elif format == "aac":
+                    os.system(f'ffmpeg -i "{temp_wav}" -c:a aac -b:a 192k "{output_path}"')
+                
+                # Remove temporary WAV file
+                temp_wav.unlink()
+                print(f"\nAudio saved as: {output_path}")
+            except Exception as e:
+                print(f"Error converting to {format.upper()}: {e}")
+                print(f"WAV file saved as: {temp_wav}")
+                return
     else:
-        print("Error: Failed to generate any audio")
+        print("No audio was generated. Please check if the input text is not empty.")
 
 def main() -> None:
     try:
