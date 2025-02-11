@@ -19,17 +19,17 @@ DEFAULT_TEXT = "Hello, welcome to this text-to-speech test."
 # Configure tqdm for better Windows console support
 tqdm.monitor_interval = 0
 
-# Create outputs directory if it doesn't exist
+# Create outputs and input directories if they don't exist
 os.makedirs('outputs', exist_ok=True)
+os.makedirs('input', exist_ok=True)
 
 def print_menu():
     """Print the main menu options."""
     print("\n=== Kokoro TTS Multi-Line Menu ===")
-    print("1. List available voices")
-    print("2. Generate speech from text")
-    print("3. Generate speech from file")
-    print("4. Exit")
-    return input("Select an option (1-4): ").strip()
+    print("1. Generate speech from text")
+    print("2. Generate speech from PDF file or TXT file")
+    print("3. Exit")
+    return input("Select an option (1-3): ").strip()
 
 def select_voice(voices: List[str]) -> str:
     """Interactive voice selection."""
@@ -97,27 +97,60 @@ def extract_text_from_pdf(file_path: str) -> List[str]:
         print(f"Error reading PDF file: {e}")
         return [DEFAULT_TEXT]
 
+def find_input_files() -> List[str]:
+    """Find all PDF and TXT files in the input directory."""
+    input_dir = Path('input')
+    files = []
+    for ext in ['.pdf', '.txt']:
+        files.extend(list(input_dir.glob(f'*{ext}')))
+    return [str(f) for f in files]
+
+def select_input_file(files: List[str]) -> str:
+    """Let user select a file from the list of available files."""
+    print("\nAvailable files:")
+    for i, file in enumerate(files, 1):
+        print(f"{i}. {os.path.basename(file)}")
+    
+    while True:
+        try:
+            choice = input("\nSelect a file number: ").strip()
+            choice = int(choice)
+            if 1 <= choice <= len(files):
+                return files[choice - 1]
+            print("Invalid choice. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+
 def get_file_input() -> List[str]:
     """Get text input from a file (supports both .txt and .pdf files)."""
-    while True:
-        file_path = input("\nEnter the path to your text or PDF file: ").strip()
-        if os.path.exists(file_path):
-            try:
-                # Check file extension
-                file_extension = os.path.splitext(file_path)[1].lower()
-                
-                if file_extension == '.pdf':
-                    return extract_text_from_pdf(file_path)
-                elif file_extension == '.txt':
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        lines = [line.strip() for line in f.readlines() if line.strip()]
-                    return lines if lines else [DEFAULT_TEXT]
-                else:
-                    print("Unsupported file format. Please use .txt or .pdf files.")
-            except Exception as e:
-                print(f"Error reading file: {e}")
-        else:
-            print("File not found. Please try again.")
+    # Find all input files
+    input_files = find_input_files()
+    
+    if not input_files:
+        print("\nNo PDF or TXT files found in the input folder.")
+        print("Please place your files in the 'input' folder and try again.")
+        return [DEFAULT_TEXT]
+    
+    # If only one file, use it directly
+    if len(input_files) == 1:
+        file_path = input_files[0]
+        print(f"\nUsing file: {os.path.basename(file_path)}")
+    else:
+        file_path = select_input_file(input_files)
+    
+    try:
+        # Check file extension
+        file_extension = os.path.splitext(file_path)[1].lower()
+        
+        if file_extension == '.pdf':
+            return extract_text_from_pdf(file_path)
+        elif file_extension == '.txt':
+            with open(file_path, 'r', encoding='utf-8') as f:
+                lines = [line.strip() for line in f.readlines() if line.strip()]
+            return lines if lines else [DEFAULT_TEXT]
+    except Exception as e:
+        print(f"Error reading file: {e}")
+        return [DEFAULT_TEXT]
 
 def get_speed() -> float:
     """Get speech speed from user."""
@@ -217,7 +250,7 @@ def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> No
             # Add appropriate pause based on punctuation
             last_char = chunk.strip()[-1] if chunk.strip() else ''
             if last_char in '.!?':
-                pause_length = int(SAMPLE_RATE * 0.25)  # Longer pause for sentence endings
+                pause_length = int(SAMPLE_RATE * 0.20)  # Longer pause for sentence endings
             elif last_char in ',;:':
                 pause_length = int(SAMPLE_RATE * 0.15)  # Medium pause for clause breaks
             else:
@@ -245,35 +278,29 @@ def main() -> None:
         # Initialize model directly without verification
         model = build_model(DEFAULT_MODEL_PATH, device)
         
+        voices = list_available_voices()
+        
         while True:
             choice = print_menu()
             
             if choice == "1":
-                # List voices
-                voices = list_available_voices()
-                print("\nAvailable voices:")
-                for voice in voices:
-                    print(f"- {voice}")
-                    
-            elif choice in ["2", "3"]:
-                # Generate speech
-                voices = list_available_voices()
-                if not voices:
-                    print("No voices found! Please check the voices directory.")
-                    continue
-                
-                # Get user inputs
+                # Generate speech from text
+                text_lines = get_text_input()
                 voice = select_voice(voices)
-                text_lines = get_file_input() if choice == "3" else get_text_input()
                 speed = get_speed()
-                
-                # Generate audio for all lines
                 generate_audio(model, text_lines, voice, speed)
-                
-            elif choice == "4":
+            
+            elif choice == "2":
+                # Generate speech from PDF file or TXT file
+                text_lines = get_file_input()
+                voice = select_voice(voices)
+                speed = get_speed()
+                generate_audio(model, text_lines, voice, speed)
+            
+            elif choice == "3":
                 print("\nGoodbye!")
                 break
-                
+            
             else:
                 print("\nInvalid choice. Please try again.")
         
