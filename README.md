@@ -133,7 +133,7 @@ brew install ffmpeg
 
 3. Add NVIDIA package repositories:
    ```bash
-   # Ubuntu 22.04 LTS
+   # Ubuntu 22.04 LTS(install drivers based on your distro release, 22.04 drivers are no longer compatible with the 24.01 or 24.02 version)
    wget https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/cuda-ubuntu2204.pin
    sudo mv cuda-ubuntu2204.pin /etc/apt/preferences.d/cuda-repository-pin-600
    wget https://developer.download.nvidia.com/compute/cuda/12.3.1/local_installers/cuda-repo-ubuntu2204-12-3-local_12.3.1-545.23.08-1_amd64.deb
