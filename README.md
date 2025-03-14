@@ -17,7 +17,7 @@ https://github.com/user-attachments/assets/b083c96d-564d-43ac-92ab-700921789bde
 - 💻 Completely offline operation - no internet needed after initial setup
 - 📚 Support for PDF and TXT file input
 - 🎵 Multiple output formats (WAV, MP3, AAC)
-- ⚡ Real-time generation with progress display
+- ⚡  Generate custom voices instantly 
 - 🎛️ Adjustable speech speed (0.5x to 2.0x)
 - 📊 Automatic text chunking for optimal processing
 - 🎯 Easy-to-use interactive CLI interface
