@@ -9,7 +9,7 @@ A powerful, offline Text-to-Speech (TTS) solution based on the Kokoro-82M model,
 
 Watch and listen to a sample of our custom voice created by interpolating Nicole and Adam voices:
 
-https://github.com/solveditnpc/kokoro-tts-local/raw/main/outputs/demo_video.mp4
+[Demo Video](/outputs/demo_video.mp4)
 
 ## 🌟 Key Features
 
