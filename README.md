@@ -5,11 +5,11 @@
 
 A powerful, offline Text-to-Speech (TTS) solution based on the Kokoro-82M model, featuring 44 high-quality voices across multiple languages and accents. This local implementation provides fast, reliable text-to-speech conversion with support for multiple output formats (WAV, MP3, AAC) and real-time generation progress display.
 
-## 🎧 Demo
+## 🎥 Demo
 
-Listen to a sample of our custom voice created by interpolating Nicole and Adam voices:
+Watch and listen to a sample of our custom voice created by interpolating Nicole and Adam voices:
 
-[▶️ Listen to Demo](https://github.com/solveditnpc/kokoro-tts-local/raw/main/outputs/custom_nicole_adam.wav)
+https://github.com/solveditnpc/kokoro-tts-local/raw/main/outputs/demo_video.mp4
 
 ## 🌟 Key Features
 
