@@ -16,6 +16,19 @@ A powerful, offline Text-to-Speech (TTS) solution based on the Kokoro-82M model,
 - 📊 Automatic text chunking for optimal processing
 - 🎯 Easy-to-use interactive CLI interface
 
+## Creating Custom Voices and creating audio books
+   
+   creating custom voices
+   ```
+   python custom_interpolation.py
+   ```
+
+   creating audio books
+   ```
+   python audio_book.py
+   ```
+   Note - you need to install the prerequisites and follow the installation steps before running the above commands
+
 ## Installing Prerequisites
 
 Before installing Kokoro TTS Local, ensure you have the following prerequisites installed from the below guide:
