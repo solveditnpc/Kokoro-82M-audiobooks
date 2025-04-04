@@ -6,7 +6,7 @@ import soundfile as sf
 from pathlib import Path
 import numpy as np
 import os
-import PyPDF2
+import pdfplumber
 import datetime
 
 # Constants
@@ -63,12 +63,11 @@ def get_text_input() -> List[str]:
     return lines
 
 def extract_text_from_pdf(file_path: str) -> List[str]:
-    """Extract text from a PDF file and return it as a list of lines."""
+    """Extract text from a PDF file and return it as a list of lines with proper spacing."""
     try:
-        with open(file_path, 'rb') as file:
-            # Create PDF reader object
-            pdf_reader = PyPDF2.PdfReader(file)
-            total_pages = len(pdf_reader.pages)
+        # Open PDF with pdfplumber
+        with pdfplumber.open(file_path) as pdf:
+            total_pages = len(pdf.pages)
             
             # Ask user for page range
             print(f"\nThe PDF has {total_pages} pages.")
@@ -86,11 +85,40 @@ def extract_text_from_pdf(file_path: str) -> List[str]:
             # Extract text from selected pages
             text_lines = []
             for page_num in range(start_page - 1, end_page):
-                text = pdf_reader.pages[page_num].extract_text()
+                page = pdf.pages[page_num]
+                text = page.extract_text(x_tolerance=3, y_tolerance=3)
+                
                 if text:
-                    # Split text into lines and filter out empty lines
-                    lines = [line.strip() for line in text.split('\n') if line.strip()]
-                    text_lines.extend(lines)
+                    # Split text into paragraphs
+                    paragraphs = text.split('\n')
+                    
+                    for paragraph in paragraphs:
+                        # Clean and normalize the paragraph
+                        cleaned_text = ' '.join(paragraph.split())
+                        
+                        # Split into sentences at punctuation marks
+                        current_sentence = []
+                        current_length = 0
+                        
+                        words = cleaned_text.split()
+                        for word in words:
+                            # Check if word ends with sentence-ending punctuation
+                            ends_sentence = any(word.endswith(p) for p in ['.', '!', '?', ':'])
+                            
+                            # Add word to current sentence
+                            current_sentence.append(word)
+                            current_length += len(word) + 1
+                            
+                            # Check if we should start a new line
+                            if ends_sentence or current_length > 150:
+                                if current_sentence:
+                                    text_lines.append(' '.join(current_sentence))
+                                    current_sentence = []
+                                    current_length = 0
+                        
+                        # Add any remaining words
+                        if current_sentence:
+                            text_lines.append(' '.join(current_sentence))
             
             return text_lines if text_lines else [DEFAULT_TEXT]
     except Exception as e:
