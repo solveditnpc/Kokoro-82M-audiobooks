@@ -10,3 +10,4 @@ phonemizer-fork  # For phoneme generation
 wheel  # For building packages
 setuptools  # For installing packages 
 PyPDF2  # For PDF file handling
+pdfplumber  # For PDF file handling
