@@ -263,8 +263,10 @@ def split_text_into_chunks(text: str) -> List[str]:
     return chunks
 
 def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> None:
-    """Generate audio for multiple lines of text and combine into a single file."""
+    """Generate audio for multiple lines of text and combine into a single file.
+    Skips problematic chunks instead of stopping the entire process."""
     all_audio_segments = []
+    failed_chunks = []
     
     # Join all lines with appropriate spacing
     full_text = ' '.join(text_lines)
@@ -282,25 +284,38 @@ def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> No
     for idx, chunk in enumerate(chunks, 1):
         print(f"\nProcessing chunk {idx}/{len(chunks)}: '{chunk}'")
         
-        chunk_audio = []
-        generator = model(chunk, voice=f"voices/{voice}.pt", speed=speed)
-        
-        with tqdm(desc="Generating") as pbar:
-            for gs, ps, audio in generator:
-                if audio is not None:
-                    if isinstance(audio, np.ndarray):
-                        audio = torch.from_numpy(audio).float()
-                    chunk_audio.append(audio)
-                    pbar.update(1)
-        
-        if chunk_audio:
-            # Combine audio for this chunk
-            chunk_combined = torch.cat(chunk_audio, dim=0)
-            all_audio_segments.append(chunk_combined.numpy())
+        try:
+            chunk_audio = []
+            generator = model(chunk, voice=f"voices/{voice}.pt", speed=speed)
             
-            # Add silence between chunks
-            silence = np.zeros(int(SAMPLE_RATE * 0.5))  # 0.5s silence
-            all_audio_segments.append(silence)
+            with tqdm(desc="Generating") as pbar:
+                try:
+                    for gs, ps, audio in generator:
+                        if audio is not None:
+                            if isinstance(audio, np.ndarray):
+                                audio = torch.from_numpy(audio).float()
+                            chunk_audio.append(audio)
+                            pbar.update(1)
+                except Exception as e:
+                    print(f"\nWarning: Error processing audio segment: {e}")
+                    failed_chunks.append((chunk, str(e)))
+                    continue
+            
+            if chunk_audio:
+                # Combine audio for this chunk
+                chunk_combined = torch.cat(chunk_audio, dim=0)
+                all_audio_segments.append(chunk_combined.numpy())
+                
+                # Add silence between chunks
+                silence = np.zeros(int(SAMPLE_RATE * 0.5))  # 0.5s silence
+                all_audio_segments.append(silence)
+            else:
+                print(f"\nWarning: No audio generated for chunk: '{chunk}'")
+                failed_chunks.append((chunk, "No audio generated"))
+        except Exception as e:
+            print(f"\nWarning: Failed to process chunk: '{chunk}'. Error: {e}")
+            failed_chunks.append((chunk, str(e)))
+            continue
     
     if all_audio_segments:
         # Combine all audio segments
@@ -331,6 +346,12 @@ def generate_audio(model, text_lines: List[str], voice: str, speed: float) -> No
                 print(f"Error converting to {format.upper()}: {e}")
                 print(f"WAV file saved as: {temp_wav}")
                 return
+        
+        # Report any failed chunks after successful audio generation
+        if failed_chunks:
+            print("\nWarning: Some chunks were skipped during processing:")
+            for chunk, error in failed_chunks:
+                print(f"- Failed chunk: '{chunk}'\n  Error: {error}")
     else:
         print("No audio was generated. Please check if the input text is not empty.")
 
